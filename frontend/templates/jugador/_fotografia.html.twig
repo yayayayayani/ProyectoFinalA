@@ -1,3 +1,3 @@
-{% if jugador.fotografia matches '/^[a-f0-9]{32}\\.(jpg|png|webp)$/' %}
+{% if is_granted('ROLE_ARBITRO') and jugador.fotografia matches '/^[a-f0-9]{32}\\.(jpg|png|webp)$/' %}
 <img class="player-photo" src="{{ path('app_jugador_fotografia', {id: jugador.id}) }}" alt="Fotografía de {{ jugador.nombres }} {{ jugador.apellidos }}" width="56" height="56" loading="lazy">
 {% else %}<span class="photo-placeholder" role="img" aria-label="Sin fotografía de {{ jugador.nombres }}">{{ jugador.nombres|slice(0,1)|upper }}{{ jugador.apellidos|slice(0,1)|upper }}</span>{% endif %}

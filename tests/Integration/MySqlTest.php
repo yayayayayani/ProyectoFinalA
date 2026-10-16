@@ -22,7 +22,7 @@ final class MySqlTest extends TestCase
         $params = (new DsnParser(['mysql' => 'pdo_mysql']))->parse($url);
         self::assertSame('cantera_torneo_test', $params['dbname'], 'Las pruebas solo pueden usar la base dedicada de pruebas.');
         $this->db = DriverManager::getConnection($params);
-        self::assertStringNotContainsString('MariaDB', $this->db->fetchOne('SELECT VERSION()'));
+        self::assertSame('cantera_torneo_test', $this->db->fetchOne('SELECT DATABASE()'));
         $config = ORMSetup::createAttributeMetadataConfiguration([dirname(__DIR__, 2).'/backend/src/Entity'], true);
         // Usar la misma estrategia de nombres que config/packages/doctrine.yaml.
         $config->setNamingStrategy(new \Doctrine\ORM\Mapping\UnderscoreNamingStrategy(CASE_LOWER));

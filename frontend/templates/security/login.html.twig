@@ -1,9 +1,9 @@
 {% extends 'base.html.twig' %}
-{% block title %}Acceso de administradores{% endblock %}
+{% block title %}Acceso del personal{% endblock %}
 {% block body %}
 <section class="panel login-panel">
 <p class="eyebrow">ORGANIZACIÓN DEL TORNEO</p><h1>Bienvenido de nuevo.</h1>
-<p class="subtitle">Inicia sesión para administrar equipos, jugadores y resultados.</p>
+<p class="subtitle">Accede con tu cuenta de administrador o árbitro. Las opciones disponibles dependen de tu rol.</p>
 {% if error %}<div class="flash flash-error" role="alert">No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.</div>{% endif %}
 <form action="{{ path('app_login') }}" method="post" data-turbo="false">
 <label for="usuario">Usuario</label><input id="usuario" name="_username" value="{{ ultimo_usuario }}" autocomplete="username" required autofocus>

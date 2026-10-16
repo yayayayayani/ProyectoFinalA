@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DoctrineMigrationsMySQL;
 
-use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -23,7 +23,7 @@ final class Version20261015000100 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->abortIf(!$this->connection->getDatabasePlatform() instanceof MySQLPlatform, 'Esta migración requiere MySQL.');
+        $this->abortIf(!$this->connection->getDatabasePlatform() instanceof AbstractMySQLPlatform, 'Esta migración requiere MySQL o MariaDB.');
         $this->addSql('CREATE TABLE equipo (id INT AUTO_INCREMENT NOT NULL, nombre VARCHAR(100) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('CREATE TABLE gol (id INT AUTO_INCREMENT NOT NULL, cantidad INT NOT NULL, jugador_id INT NOT NULL, jornada_id INT NOT NULL, UNIQUE INDEX UNIQ_GOL_JUGADOR_JORNADA (jugador_id, jornada_id), INDEX IDX_14B85EACB8A54D43 (jugador_id), INDEX IDX_14B85EAC26E992D9 (jornada_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('CREATE TABLE incidencia (id INT AUTO_INCREMENT NOT NULL, descripcion LONGTEXT NOT NULL, tipo_tarjeta VARCHAR(10) NOT NULL, fecha_incidencia DATE NOT NULL, fecha_suspension DATE DEFAULT NULL, jugador_id INT NOT NULL, INDEX IDX_C7C6728CB8A54D43 (jugador_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');

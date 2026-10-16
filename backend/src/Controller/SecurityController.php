@@ -9,7 +9,7 @@ final class SecurityController extends AbstractController
     #[Route('/login', name: 'app_login', methods: ['GET', 'POST'])]
     public function login(AuthenticationUtils $authentication): Response
     {
-        if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_inicio');
+        if ($this->isGranted('ROLE_ARBITRO')) return $this->redirectToRoute('app_inicio');
         return $this->render('security/login.html.twig', [
             'ultimo_usuario' => $authentication->getLastUsername(),
             'error' => $authentication->getLastAuthenticationError(),

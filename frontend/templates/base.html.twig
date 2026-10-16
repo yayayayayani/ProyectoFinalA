@@ -20,25 +20,25 @@
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 <aside class="sidebar" id="navegacion">
     <a class="brand" href="{{ path('app_inicio') }}"><span class="brand-symbol">{{ ui.icon('ball') }}</span><span>cantera<span class="brand-sub">TORNEO INFANTIL</span></span></a>
-    <p class="nav-label">ORGANIZACIÓN</p>
+    <p class="nav-label">TORNEO</p>
     <nav aria-label="Navegación principal">
         <a class="nav-link {{ ruta == 'app_inicio' ? 'active' }}" href="{{ path('app_inicio') }}">{{ ui.icon('grid') }} Inicio</a>
         <a class="nav-link {{ ruta starts with 'app_equipo' ? 'active' }}" href="{{ path('app_equipo_index') }}">{{ ui.icon('shield') }} Equipos</a>
-        <a class="nav-link {{ ruta starts with 'app_jugador' ? 'active' }}" href="{{ path('app_jugador_index') }}">{{ ui.icon('users') }} Jugadores</a>
+{% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ ruta starts with 'app_jugador' ? 'active' }}" href="{{ path('app_jugador_index') }}">{{ ui.icon('users') }} Jugadores</a>{% endif %}
         <a class="nav-link {{ moduloActual == 'jornada' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'jornada'}) }}">{{ ui.icon('calendar') }} Jornadas</a>
-        <a class="nav-link {{ moduloActual == 'gol' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'gol'}) }}">{{ ui.icon('ball') }} Goles</a>
-        <a class="nav-link {{ moduloActual == 'incidencia' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'incidencia'}) }}">{{ ui.icon('card') }} Incidencias</a>
+{% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ moduloActual == 'gol' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'gol'}) }}">{{ ui.icon('ball') }} Goles</a>{% endif %}
+{% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ moduloActual == 'incidencia' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'incidencia'}) }}">{{ ui.icon('card') }} Incidencias</a>{% endif %}
     </nav>
     <p class="nav-label">REPORTES</p>
     <nav aria-label="Reportes">
-        <a class="nav-link {{ reporteActual == 'arbitro' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'arbitro'}) }}">{{ ui.icon('clipboard') }} Nómina del árbitro</a>
+{% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ reporteActual == 'arbitro' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'arbitro'}) }}">{{ ui.icon('clipboard') }} Nómina del árbitro</a>{% endif %}
         <a class="nav-link {{ reporteActual == 'goleadores' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'goleadores'}) }}">{{ ui.icon('trophy') }} Goleadores</a>
-        <a class="nav-link {{ reporteActual == 'incidencias' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'incidencias'}) }}">{{ ui.icon('file') }} Informe de incidencias</a>
+{% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ reporteActual == 'incidencias' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'incidencias'}) }}">{{ ui.icon('file') }} Informe de incidencias</a>{% endif %}
     </nav>
     <div class="session-controls">
-{% if is_granted('ROLE_ADMIN') %}<span class="session-label">Administrador · {{ app.user.userIdentifier }}</span>
+{% if is_granted('ROLE_ARBITRO') %}<span class="session-label">{{ is_granted('ROLE_ADMIN') ? 'Administrador' : 'Árbitro' }} · {{ app.user.userIdentifier }}</span>
 <form action="{{ path('app_logout') }}" method="post" data-turbo="false"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button class="button secondary" type="submit">Cerrar sesión</button></form>
-{% else %}<span class="session-label">Estás viendo el torneo como visitante</span><a class="button light" href="{{ path('app_login') }}">Acceso administradores</a>{% endif %}
+{% else %}<span class="session-label">Estás viendo el torneo como visitante</span><a class="button light" href="{{ path('app_login') }}">Acceso del personal</a>{% endif %}
 </div><div class="sidebar-note"><span class="status-dot"></span> El fútbol empieza aquí.<small>Pequeños jugadores. Grandes historias.</small></div>
 </aside>
 <div class="app-shell">

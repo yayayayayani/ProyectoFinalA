@@ -18,6 +18,15 @@ class Administrador implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUsuario(string $usuario): self { $this->usuario = $usuario; return $this; }
     public function getPassword(): string { return $this->password; }
     public function setPassword(string $password): self { $this->password = $password; return $this; }
-    public function getRoles(): array { return ['ROLE_ADMIN']; }
+    #[ORM\Column(length: 20, options: ['default' => 'ROLE_ADMIN'])]
+    private string $rol = 'ROLE_ADMIN';
+    public function getRol(): string { return $this->rol; }
+    public function setRol(string $rol): self
+    {
+        if (!in_array($rol, ['ROLE_ADMIN', 'ROLE_ARBITRO'], true)) throw new \InvalidArgumentException('Rol inválido.');
+        $this->rol = $rol;
+        return $this;
+    }
+    public function getRoles(): array { return [$this->rol]; }
     public function eraseCredentials(): void {}
 }
