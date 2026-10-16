@@ -52,6 +52,28 @@ final class TorneoTest extends WebTestCase
         else $_SERVER['DATABASE_URL'] = $this->previous[1];
     }
 
+    public function testReportsDownloadPdfWithSelectedFilters(): void
+    {
+        foreach (['arbitro', 'goleadores', 'incidencias'] as $tipo) {
+            $filtros = ['equipo' => $this->equipoId];
+            if ($tipo !== 'incidencias') $filtros['jornada'] = $this->jornadaId;
+            $page = $this->client->request('GET', '/reportes/'.$tipo, ['form' => $filtros]);
+            self::assertResponseIsSuccessful();
+            $link = $page->selectLink('Descargar PDF')->link();
+            parse_str(parse_url($link->getUri(), PHP_URL_QUERY), $query);
+            self::assertSame((string) $this->equipoId, $query['form']['equipo']);
+            $this->client->click($link);
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('Content-Type', 'application/pdf');
+            self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename="cantera-'.$tipo.'.pdf"');
+            self::assertStringStartsWith('%PDF-', $this->client->getResponse()->getContent());
+        }
+        $this->client->request('GET', '/reportes/arbitro', ['formato' => 'pdf']);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->request('GET', '/reportes/goleadores', ['formato' => 'pdf', 'form' => ['equipo' => '9999']]);
+        self::assertResponseStatusCodeSame(422);
+    }
+
     public function testInvalidCalendarDatesCannotBeSavedInOtherModules(): void
     {
         foreach (['/jornada/new', '/jornada/'.$this->jornadaId.'/edit'] as $url) {

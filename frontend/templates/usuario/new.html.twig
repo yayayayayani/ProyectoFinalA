@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+{% block title %}Registrar usuario{% endblock %}
+{% block body %}
+<a class="back-link" href="{{ path('app_usuario_index') }}">← Usuarios</a>
+<div class="page-heading"><div><p class="eyebrow">ADMINISTRACIÓN</p><h1>Registrar usuario</h1><p class="subtitle">Crea una cuenta y selecciona sus permisos de acceso.</p></div></div>
+<section class="panel form-panel">
+    {{ form_start(form, {attr: {class: 'entity-form'}}) }}
+    {{ form_widget(form) }}
+    <div class="form-actions"><button class="button primary">Registrar usuario</button><a class="button secondary" href="{{ path('app_usuario_index') }}">Cancelar</a></div>
+    {{ form_end(form) }}
+</section>
+{% endblock %}

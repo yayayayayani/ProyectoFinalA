@@ -4,8 +4,8 @@
 <section class="panel login-panel">
 <p class="eyebrow">ORGANIZACIÓN DEL TORNEO</p><h1>Bienvenido de nuevo.</h1>
 <p class="subtitle">Accede con tu cuenta de administrador o árbitro. Las opciones disponibles dependen de tu rol.</p>
-{% if error %}<div class="flash flash-error" role="alert">No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.</div>{% endif %}
-<form action="{{ path('app_login') }}" method="post" data-turbo="false">
+<div class="flash flash-error" role="alert" data-login-error {% if not error %}hidden{% endif %}>{{ error ? mensajeError : '' }}</div>
+<form action="{{ path('app_login') }}" method="post" data-turbo="false" data-login-form>
 <label for="usuario">Usuario</label><input id="usuario" name="_username" value="{{ ultimo_usuario }}" autocomplete="username" required autofocus>
 <label for="clave">Contraseña</label><input id="clave" name="_password" type="password" autocomplete="current-password" required>
 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">

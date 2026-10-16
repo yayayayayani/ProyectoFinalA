@@ -32,6 +32,77 @@ final class AccesoTest extends WebTestCase
         if ($this->previous[0] === null) unset($_ENV['DATABASE_URL']); else $_ENV['DATABASE_URL'] = $this->previous[0];
         if ($this->previous[1] === null) unset($_SERVER['DATABASE_URL']); else $_SERVER['DATABASE_URL'] = $this->previous[1];
     }
+    public function testPdfDownloadsRespectReportPermissions(): void
+    {
+        foreach (['arbitro', 'incidencias'] as $tipo) {
+            $this->client->request('GET', '/reportes/'.$tipo, ['formato' => 'pdf']);
+            self::assertResponseRedirects('/login');
+        }
+        $this->client->request('GET', '/reportes/goleadores', ['formato' => 'pdf']);
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'application/pdf');
+        self::assertStringStartsWith('%PDF-', $this->client->getResponse()->getContent());
+    }
+
+    public function testUserModuleRequiresAdministrator(): void
+    {
+        foreach (['GET', 'POST'] as $method) {
+            $this->client->request($method, '/usuarios/new');
+            self::assertResponseRedirects('/login');
+        }
+        $arbitro = (new Administrador())->setUsuario('lector')->setRol('ROLE_ARBITRO')->setPassword('unused');
+        $this->em->persist($arbitro);
+        $this->em->flush();
+        $this->client->loginUser($arbitro);
+        foreach (['/usuarios', '/usuarios/new'] as $url) {
+            $this->client->request('GET', $url);
+            self::assertResponseStatusCodeSame(403);
+        }
+        $this->client->request('POST', '/usuarios/new');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testAdministratorCanRegisterBothRolesWithHashedPasswords(): void
+    {
+        $this->client->loginUser($this->em->getRepository(Administrador::class)->findOneBy(['usuario' => 'organizador']));
+        foreach (['ROLE_ARBITRO', 'ROLE_ADMIN'] as $rol) {
+            $page = $this->client->request('GET', '/usuarios/new');
+            $this->client->submit($page->selectButton('Registrar usuario')->form([
+                'usuario[usuario]' => 'nuevo_'.$rol,
+                'usuario[rol]' => $rol,
+                'usuario[password][first]' => 'ClaveNueva2026!',
+                'usuario[password][second]' => 'ClaveNueva2026!',
+            ]));
+            self::assertResponseRedirects('/usuarios', 303);
+            $usuario = $this->em->getRepository(Administrador::class)->findOneBy(['usuario' => 'nuevo_'.$rol]);
+            self::assertSame($rol, $usuario->getRol());
+            self::assertTrue(static::getContainer()->get(UserPasswordHasherInterface::class)->isPasswordValid($usuario, 'ClaveNueva2026!'));
+            $this->client->followRedirect();
+            self::assertSelectorTextContains('main', 'nuevo_'.$rol);
+            self::assertStringNotContainsString($usuario->getPassword(), $this->client->getResponse()->getContent());
+        }
+    }
+
+    public function testUserRegistrationRejectsInvalidDataAndDuplicateNames(): void
+    {
+        $this->client->loginUser($this->em->getRepository(Administrador::class)->findOneBy(['usuario' => 'organizador']));
+        $valid = ['usuario' => 'nuevo', 'rol' => 'ROLE_ARBITRO', 'password' => ['first' => 'ClaveNueva2026!', 'second' => 'ClaveNueva2026!']];
+        foreach ([
+            ['usuario' => 'organizador'],
+            ['usuario' => 'nombre inválido'],
+            ['rol' => 'ROLE_SUPER_ADMIN'],
+            ['password' => ['first' => 'corta', 'second' => 'corta']],
+            ['password' => ['first' => 'ClaveNueva2026!', 'second' => 'OtraClave2026!']],
+            ['_token' => 'incorrecto'],
+        ] as $invalid) {
+            $page = $this->client->request('GET', '/usuarios/new');
+            $token = $page->filter('input[name="usuario[_token]"]')->attr('value');
+            $this->client->request('POST', '/usuarios/new', ['usuario' => array_replace($valid, ['_token' => $token], $invalid)]);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSame(1, $this->em->getRepository(Administrador::class)->count([]));
+        }
+    }
+
     public function testVisitorCanReadButCannotWriteOrSeeEditButtons(): void
     {
         foreach (['/', '/equipo', '/jornada', '/reportes/goleadores'] as $url) {
@@ -126,6 +197,26 @@ final class AccesoTest extends WebTestCase
         $this->client->request('GET','/equipo/new');
         self::assertResponseRedirects('/login');
     }
+    public function testLoginAndLogoutBehindHttpsProxyUseSessionCsrfTokens(): void
+    {
+        $server = ['REMOTE_ADDR' => '127.0.0.1', 'HTTP_HOST' => 'lacantera.lol', 'HTTP_X_FORWARDED_PROTO' => 'https'];
+        $page = $this->client->request('GET', 'https://lacantera.lol/login', [], [], $server);
+        $token = $page->filter('input[name="_csrf_token"]')->attr('value');
+        self::assertNotSame('csrf-token', $token);
+        // No depende de Origin, Referer ni de una cookie generada con JavaScript.
+        $this->client->request('POST', 'https://lacantera.lol/login', [
+            '_username' => 'organizador', '_password' => 'ClaveDePrueba2026!', '_csrf_token' => $token,
+        ], [], $server);
+        self::assertResponseRedirects('https://lacantera.lol/');
+        $page = $this->client->request('GET', 'https://lacantera.lol/', [], [], $server);
+        self::assertSelectorExists('form[action="/logout"]');
+        $logoutToken = $page->filter('form[action="/logout"] input[name="_csrf_token"]')->attr('value');
+        $this->client->request('POST', 'https://lacantera.lol/logout', ['_csrf_token' => $logoutToken], [], $server);
+        self::assertResponseRedirects('https://lacantera.lol/');
+        $this->client->request('GET', 'https://lacantera.lol/usuarios', [], [], $server);
+        self::assertResponseRedirects('https://lacantera.lol/login');
+    }
+
     public function testInvalidCsrfCannotAuthenticate(): void
     {
         $this->client->request('POST','/login',['_username'=>'organizador','_password'=>'ClaveDePrueba2026!','_csrf_token'=>'incorrecto']);

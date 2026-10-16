@@ -35,6 +35,12 @@
         <a class="nav-link {{ reporteActual == 'goleadores' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'goleadores'}) }}">{{ ui.icon('trophy') }} Goleadores</a>
 {% if is_granted('ROLE_ARBITRO') %}        <a class="nav-link {{ reporteActual == 'incidencias' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'incidencias'}) }}">{{ ui.icon('file') }} Informe de incidencias</a>{% endif %}
     </nav>
+    {% if is_granted('ROLE_ADMIN') %}
+    <p class="nav-label">ADMINISTRACIÓN</p>
+    <nav aria-label="Administración">
+        <a class="nav-link {{ ruta starts with 'app_usuario' ? 'active' }}" href="{{ path('app_usuario_index') }}">{{ ui.icon('users') }} Usuarios</a>
+    </nav>
+    {% endif %}
     <div class="session-controls">
 {% if is_granted('ROLE_ARBITRO') %}<span class="session-label">{{ is_granted('ROLE_ADMIN') ? 'Administrador' : 'Árbitro' }} · {{ app.user.userIdentifier }}</span>
 <form action="{{ path('app_logout') }}" method="post" data-turbo="false"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button class="button secondary" type="submit">Cerrar sesión</button></form>

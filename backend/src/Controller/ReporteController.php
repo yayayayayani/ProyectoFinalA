@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\{Equipo, Jugador, Jornada};
 use App\Service\EstadisticasTorneo;
+use App\Service\FotografiaUploader;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
@@ -14,7 +17,7 @@ use Symfony\Component\Validator\Constraints\NotNull;
 final class ReporteController extends AbstractController
 {
     #[Route('/reportes/{tipo}', name: 'app_reporte', requirements: ['tipo' => 'arbitro|incidencias|goleadores'], methods: ['GET'])]
-    public function index(string $tipo, Request $request, EstadisticasTorneo $estadisticas): Response
+    public function index(string $tipo, Request $request, EstadisticasTorneo $estadisticas, FotografiaUploader $fotografias): Response
     {
         $builder = $this->createFormBuilder(null, ['method' => 'GET', 'csrf_protection' => false])
             ->add('equipo', EntityType::class, ['class' => Equipo::class, 'choice_label' => 'nombre', 'required' => false, 'placeholder' => 'Todos los equipos']);
@@ -46,6 +49,39 @@ final class ReporteController extends AbstractController
             };
         }
 
+        if ($request->query->get('formato') === 'pdf') {
+            if (!$listo) {
+                $this->addFlash('error', 'Selecciona filtros válidos antes de descargar el PDF.');
+                return $this->render('reporte/index.html.twig', compact('tipo', 'form', 'filas', 'filtros', 'listo'), new Response(status: 422));
+            }
+            $pdfFotos = [];
+            if ($this->isGranted('ROLE_ARBITRO') && $tipo !== 'incidencias') {
+                foreach ($filas as $fila) {
+                    $jugador = $tipo === 'arbitro' ? $fila['jugador'] : $fila;
+                    $id = is_array($jugador) ? $jugador['id'] : $jugador->getId();
+                    $nombre = is_array($jugador) ? $jugador['fotografia'] : $jugador->getFotografia();
+                    if ($path = $fotografias->path($nombre)) {
+                        $pdfFotos[$id] = 'data:'.mime_content_type($path).';base64,'.base64_encode(file_get_contents($path));
+                    }
+                }
+            }
+            $options = new Options();
+            $options->setIsRemoteEnabled(false);
+            $options->setIsPhpEnabled(false);
+            $options->setIsJavascriptEnabled(false);
+            $pdf = new Dompdf($options);
+            $pdf->loadHtml($this->renderView('reporte/index.html.twig', [
+                ...compact('tipo', 'filas', 'filtros', 'listo', 'pdfFotos'),
+                'form' => $form->createView(), 'pdf' => true,
+            ]));
+            $pdf->setPaper('A4', 'landscape');
+            $pdf->render();
+            return new Response($pdf->output(), 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="cantera-'.$tipo.'.pdf"',
+                'Cache-Control' => 'private, no-store',
+            ]);
+        }
         return $this->render('reporte/index.html.twig', compact('tipo', 'form', 'filas', 'filtros', 'listo'));
     }
 }

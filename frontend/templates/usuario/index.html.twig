@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+{% block title %}Usuarios{% endblock %}
+{% block body %}
+<div class="page-heading">
+    <div><p class="eyebrow">ADMINISTRACIÓN</p><h1>Usuarios</h1><p class="subtitle">Cuentas de acceso y roles del personal del torneo.</p></div>
+    <a class="button primary" href="{{ path('app_usuario_new') }}">+ Registrar usuario</a>
+</div>
+<div class="team-grid">
+{% for usuario in usuarios %}
+    <article class="panel team-card">
+        <span class="eyebrow">{{ usuario.rol == 'ROLE_ADMIN' ? 'Administrador' : 'Árbitro' }}</span>
+        <h2>{{ usuario.userIdentifier }}</h2>
+        <p>{{ usuario.rol == 'ROLE_ADMIN' ? 'Administra el torneo y registra usuarios.' : 'Consulta información del torneo y reportes.' }}</p>
+        {% if usuario.id == app.user.id %}<span class="session-label">Tu cuenta</span>{% endif %}
+    </article>
+{% else %}
+    <section class="panel empty">No hay usuarios registrados.</section>
+{% endfor %}
+</div>
+{% endblock %}

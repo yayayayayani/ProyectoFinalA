@@ -8,6 +8,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 
 /** Registra resultados HTTP de escrituras sin contraseñas, tokens ni datos personales. */
 final class AuditSubscriber implements EventSubscriberInterface
@@ -17,7 +18,18 @@ final class AuditSubscriber implements EventSubscriberInterface
         #[Autowire(service: 'monolog.logger.audit')] private readonly LoggerInterface $logger,
     ) {}
 
-    public static function getSubscribedEvents(): array { return [KernelEvents::RESPONSE => ['onResponse', -20]]; }
+    public static function getSubscribedEvents(): array
+    {
+        return [KernelEvents::RESPONSE => ['onResponse', -20], LoginFailureEvent::class => 'onLoginFailure'];
+    }
+
+    public function onLoginFailure(LoginFailureEvent $event): void
+    {
+        $this->logger->notice('Acceso rechazado', [
+            'reason' => (new \ReflectionClass($event->getException()))->getShortName(),
+            'secure' => $event->getRequest()->isSecure(),
+        ]);
+    }
 
     public function onResponse(ResponseEvent $event): void
     {

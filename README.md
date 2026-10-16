@@ -101,6 +101,7 @@ arranque local, pruebas, respaldos e importación desde SQLite.
 
 ## Funcionalidades
 
+- Usuarios: listado y registro de cuentas con rol Administrador o Árbitro, desde el menú Administración (solo administradores). Las contraseñas requieren al menos 12 caracteres y confirmación.
 - Panel de inicio con datos reales del torneo.
 - Equipos: registro, edición, consulta de plantilla y eliminación protegida.
 - Jugadores: datos personales, fotografías seguras, búsqueda, filtros y ficha.
@@ -110,7 +111,7 @@ arranque local, pruebas, respaldos e importación desde SQLite.
 - Nómina del árbitro por equipo y jornada, con fotografías y estado.
 - Reporte de incidencias por equipo y jugador.
 - Goleadores ordenados por total descendente, filtrables por equipo y jornada.
-- Reportes imprimibles y guardables como PDF desde el navegador.
+- Reportes con descarga directa en PDF, conservando los filtros seleccionados y los permisos de acceso.
 - Interfaz adaptable a escritorio y móvil, en español.
 
 ## Reglas del proyecto

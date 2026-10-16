@@ -1,4 +1,5 @@
-# Enable stateless CSRF protection for forms and logins/logouts
+# Los formularios generales usan CSRF sin estado. El acceso y cierre de sesión
+# usan tokens ligados a la sesión, también detrás del túnel HTTPS.
 framework:
     form:
         csrf_protection:
@@ -7,5 +8,3 @@ framework:
     csrf_protection:
         stateless_token_ids:
             - submit
-            - authenticate
-            - logout
