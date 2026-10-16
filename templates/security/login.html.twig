@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+{% block title %}Acceso de administradores{% endblock %}
+{% block body %}
+<section class="panel login-panel">
+<p class="eyebrow">ORGANIZACIÓN DEL TORNEO</p><h1>Bienvenido de nuevo.</h1>
+<p class="subtitle">Inicia sesión para administrar equipos, jugadores y resultados.</p>
+{% if error %}<div class="flash flash-error" role="alert">No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.</div>{% endif %}
+<form action="{{ path('app_login') }}" method="post" data-turbo="false">
+<label for="usuario">Usuario</label><input id="usuario" name="_username" value="{{ ultimo_usuario }}" autocomplete="username" required autofocus>
+<label for="clave">Contraseña</label><input id="clave" name="_password" type="password" autocomplete="current-password" required>
+<input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+<button class="button primary" type="submit">Iniciar sesión</button>
+</form>
+<p>¿Vienes a seguir el torneo? <a class="text-link" href="{{ path('app_inicio') }}">Continuar como visitante →</a></p>
+</section>
+{% endblock %}

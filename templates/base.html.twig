@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#123c32">
+    <title>{% block title %}Inicio{% endblock %} · Cantera</title>
+    <link rel="icon" href="{{ asset('icon.svg') }}" type="image/svg+xml">
+    {% block javascripts %}{% block importmap %}{{ importmap('app') }}{% endblock %}{% endblock %}
+    {% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+        <link rel="stylesheet" href="{{ asset('styles/cantera.css') }}">
+    {% endblock %}
+</head>
+<body>
+{% import 'ui/icons.html.twig' as ui %}
+{% set ruta = app.request.attributes.get('_route') %}
+{% set moduloActual = app.request.attributes.get('modulo') %}
+{% set reporteActual = app.request.attributes.get('tipo') %}
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+<aside class="sidebar" id="navegacion">
+    <a class="brand" href="{{ path('app_inicio') }}"><span class="brand-symbol">{{ ui.icon('ball') }}</span><span>cantera<span class="brand-sub">TORNEO INFANTIL</span></span></a>
+    <p class="nav-label">ORGANIZACIÓN</p>
+    <nav aria-label="Navegación principal">
+        <a class="nav-link {{ ruta == 'app_inicio' ? 'active' }}" href="{{ path('app_inicio') }}">{{ ui.icon('grid') }} Inicio</a>
+        <a class="nav-link {{ ruta starts with 'app_equipo' ? 'active' }}" href="{{ path('app_equipo_index') }}">{{ ui.icon('shield') }} Equipos</a>
+        <a class="nav-link {{ ruta starts with 'app_jugador' ? 'active' }}" href="{{ path('app_jugador_index') }}">{{ ui.icon('users') }} Jugadores</a>
+        <a class="nav-link {{ moduloActual == 'jornada' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'jornada'}) }}">{{ ui.icon('calendar') }} Jornadas</a>
+        <a class="nav-link {{ moduloActual == 'gol' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'gol'}) }}">{{ ui.icon('ball') }} Goles</a>
+        <a class="nav-link {{ moduloActual == 'incidencia' ? 'active' }}" href="{{ path('app_registro_index', {modulo: 'incidencia'}) }}">{{ ui.icon('card') }} Incidencias</a>
+    </nav>
+    <p class="nav-label">REPORTES</p>
+    <nav aria-label="Reportes">
+        <a class="nav-link {{ reporteActual == 'arbitro' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'arbitro'}) }}">{{ ui.icon('clipboard') }} Nómina del árbitro</a>
+        <a class="nav-link {{ reporteActual == 'goleadores' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'goleadores'}) }}">{{ ui.icon('trophy') }} Goleadores</a>
+        <a class="nav-link {{ reporteActual == 'incidencias' ? 'active' }}" href="{{ path('app_reporte', {tipo: 'incidencias'}) }}">{{ ui.icon('file') }} Informe de incidencias</a>
+    </nav>
+    <div class="session-controls">
+{% if is_granted('ROLE_ADMIN') %}<span class="session-label">Administrador · {{ app.user.userIdentifier }}</span>
+<form action="{{ path('app_logout') }}" method="post" data-turbo="false"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button class="button secondary" type="submit">Cerrar sesión</button></form>
+{% else %}<span class="session-label">Estás viendo el torneo como visitante</span><a class="button light" href="{{ path('app_login') }}">Acceso administradores</a>{% endif %}
+</div><div class="sidebar-note"><span class="status-dot"></span> El fútbol empieza aquí.<small>Pequeños jugadores. Grandes historias.</small></div>
+</aside>
+<div class="app-shell">
+    <header class="topbar"><button class="icon-button menu-toggle" data-menu-toggle aria-controls="navegacion" aria-expanded="false" aria-label="Abrir menú">{{ ui.icon('menu') }}</button><span class="topbar-label">Gestión del torneo <span>/</span> <strong>Fútbol infantil</strong></span><span class="topbar-date">{{ 'now'|date('d.m.Y', 'America/Guatemala') }} <span class="avatar">DT</span></span></header>
+    <main id="contenido" tabindex="-1">
+        {% for tipo, mensajes in app.flashes %}{% for mensaje in mensajes %}<div class="flash flash-{{ tipo }}" role="status">{{ mensaje }}</div>{% endfor %}{% endfor %}
+        {% block body %}{% endblock %}
+    </main>
+    <footer class="site-footer"><span>Cantera · Gestión de fútbol infantil</span><span>Hecho para disfrutar el juego.</span></footer>
+</div>
+</body>
+</html>

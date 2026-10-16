@@ -1,0 +1,6 @@
+{{ form_start(form, {attr:{class:'entity-form'}}) }}
+{{ form_errors(form) }}
+<div class="form-grid">{{ form_row(form.nombres) }}{{ form_row(form.apellidos) }}{{ form_row(form.fechaNacimiento) }}{{ form_row(form.equipo) }}</div>
+<div class="upload-section">{% if jugador.id and jugador.fotografia %}<div class="current-photo">{{ include('jugador/_fotografia.html.twig') }}<span>Fotografía actual{% if not (jugador.fotografia matches '/^[a-f0-9]{32}\\.(jpg|png|webp)$/') %}<small>{{ jugador.fotografia }}</small>{% endif %}</span></div>{% endif %}{{ form_row(form.fotografiaArchivo) }}<img class="upload-preview" data-photo-preview hidden alt="Vista previa de la fotografía seleccionada"></div>
+<div class="form-actions"><button class="button primary">{{ button_label|default('Guardar jugador') }}</button><a class="button secondary" href="{{ path('app_jugador_index') }}">Cancelar</a></div>
+{{ form_end(form) }}
