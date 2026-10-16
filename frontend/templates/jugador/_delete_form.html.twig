@@ -1,0 +1,1 @@
+<form method="post" action="{{ path('app_jugador_delete',{id:jugador.id}) }}" data-confirm="¿Eliminar este jugador? Esta acción no se puede deshacer."><input type="hidden" name="_token" value="{{ csrf_token('delete_jugador_' ~ jugador.id) }}"><button class="button danger">Eliminar jugador</button></form>

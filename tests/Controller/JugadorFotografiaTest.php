@@ -63,6 +63,53 @@ final class JugadorFotografiaTest extends WebTestCase
         }
     }
 
+    public function testInvalidPlayerDataCannotBeCreatedOrSavedOnEdit(): void
+    {
+        $this->createJugador();
+        self::assertResponseRedirects('/jugador', 303);
+        $id = $this->em->getRepository(Jugador::class)->findOneBy(['nombres' => 'Ana'])->getId();
+        foreach (['/jugador/new', '/jugador/'.$id.'/edit'] as $url) {
+            foreach ([
+                ['nombres' => '1221212321'],
+                ['apellidos' => '12312312321'],
+                ['nombres' => 'Ana123'],
+                ['apellidos' => '<script>'],
+                ['nombres' => '   '],
+                ['apellidos' => str_repeat('a', 101)],
+                ['fechaNacimiento' => (new \DateTimeImmutable('today'))->format('Y-m-d')],
+                ['fechaNacimiento' => (new \DateTimeImmutable('tomorrow'))->format('Y-m-d')],
+                ['fechaNacimiento' => (new \DateTimeImmutable('today -6 years +1 day'))->format('Y-m-d')],
+                ['fechaNacimiento' => '2020-02-30'],
+                ['equipo' => '999999'],
+            ] as $invalid) {
+                $crawler = $this->client->request('GET', $url);
+                $form = $crawler->filter('form[name="jugador"]')->form();
+                $values = $form->getPhpValues();
+                $values['jugador'] = array_replace($values['jugador'], [
+                    'nombres' => 'Ana', 'apellidos' => 'López',
+                    'fechaNacimiento' => '2016-05-10', 'equipo' => $this->equipoId,
+                ], $invalid);
+                // POST directo: comprueba el servidor sin depender de validación HTML.
+                $this->client->request('POST', $url, $values);
+                self::assertFalse($this->client->getResponse()->isRedirect(), $url.' '.json_encode($invalid).' redirect: '.$this->client->getResponse()->headers->get('Location'));
+                self::assertSelectorExists('form li');
+                $this->em->clear();
+                self::assertSame(1, $this->em->getRepository(Jugador::class)->count([]));
+                self::assertSame('Ana', $this->em->find(Jugador::class, $id)->getNombres());
+                self::assertSame('López', $this->em->find(Jugador::class, $id)->getApellidos());
+                self::assertSame('2016-05-10', $this->em->find(Jugador::class, $id)->getFechaNacimiento()->format('Y-m-d'));
+            }
+        }
+        $crawler = $this->client->request('GET', '/jugador/'.$id.'/edit');
+        $form = $crawler->filter('form[name="jugador"]')->form([
+            'jugador[nombres]' => 'María-José',
+            'jugador[apellidos]' => 'O’Neill de la Peña',
+            'jugador[fechaNacimiento]' => (new \DateTimeImmutable('today -6 years'))->format('Y-m-d'),
+        ]);
+        $this->client->submit($form);
+        self::assertResponseRedirects('/jugador', 303);
+    }
+
     private function imageFile(string $name = 'foto.png'): UploadedFile
     {
         $path = $this->directory.'/'.bin2hex(random_bytes(4)).'.png';

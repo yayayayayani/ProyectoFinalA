@@ -2,7 +2,9 @@ framework:
     asset_mapper:
         # The paths to make available to the asset mapper.
         paths:
-            - assets/
+            - frontend/assets/
+        importmap_path: '%kernel.project_dir%/importmap.php'
+        vendor_dir: '%kernel.project_dir%/frontend/assets/vendor'
         missing_import_mode: strict
 
 when@prod:

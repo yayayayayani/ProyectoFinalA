@@ -1,6 +1,14 @@
 monolog:
     channels: # To see all channels, run bin/console debug:autowiring logger
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
+        - audit
+    handlers:
+        audit:
+            type: rotating_file
+            path: '%kernel.logs_dir%/audit-%kernel.environment%.log'
+            level: info
+            max_files: 30
+            channels: [audit]
 
 when@dev:
     monolog:

@@ -16,6 +16,7 @@ final class AccesoTest extends WebTestCase
         $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = 'sqlite:///:memory:';
         $this->client = static::createClient();
         $this->client->disableReboot();
+        static::getContainer()->get('cache.rate_limiter')->clear();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         self::assertTrue($this->em->getConnection()->getParams()['memory'] ?? false);
         (new SchemaTool($this->em))->createSchema($this->em->getMetadataFactory()->getAllMetadata());
@@ -76,5 +77,39 @@ final class AccesoTest extends WebTestCase
         self::assertResponseRedirects('/login');
         $this->client->request('GET','/equipo/new');
         self::assertResponseRedirects('/login');
+    }
+
+    public function testRepeatedFailuresTemporarilyBlockEvenTheCorrectPassword(): void
+    {
+        for ($i = 0; $i < 6; ++$i) {
+            $page = $this->client->request('GET', '/login');
+            $this->client->submit($page->selectButton('Iniciar sesión')->form([
+                '_username' => 'organizador', '_password' => 'incorrecta',
+            ]));
+            self::assertResponseRedirects('/login');
+        }
+        $page = $this->client->request('GET', '/login');
+        $this->client->submit($page->selectButton('Iniciar sesión')->form([
+            '_username' => 'organizador', '_password' => 'ClaveDePrueba2026!',
+        ]));
+        self::assertResponseRedirects('/login');
+        $this->client->request('GET', '/equipo/new');
+        self::assertResponseRedirects('/login');
+    }
+
+    public function testSecurityHeadersAndSecureCookieBehindLocalProxy(): void
+    {
+        $this->client->request('GET', '/login', [], [], [
+            'REMOTE_ADDR' => '127.0.0.1', 'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+        self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
+        self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
+        self::assertStringContainsString("frame-ancestors 'none'", $this->client->getResponse()->headers->get('Content-Security-Policy'));
+        self::assertTrue($this->client->getResponse()->headers->hasCacheControlDirective('no-store'));
+        self::assertTrue($this->client->getRequest()->isSecure());
+        $this->client->request('GET', '/login', [], [], [
+            'REMOTE_ADDR' => '192.0.2.123', 'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+        self::assertFalse($this->client->getRequest()->isSecure(), 'No confiar en cabeceras de proxies desconocidos.');
     }
 }

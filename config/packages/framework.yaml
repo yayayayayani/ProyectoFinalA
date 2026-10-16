@@ -4,7 +4,13 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Solo el túnel/proxy local puede indicar el protocolo HTTPS original.
+    trusted_proxies: '127.0.0.1,::1'
+    trusted_headers: ['x-forwarded-proto']
+    session:
+        cookie_httponly: true
+        cookie_secure: auto
+        cookie_samesite: lax
 
     #esi: true
     #fragments: true

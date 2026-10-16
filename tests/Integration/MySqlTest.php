@@ -23,7 +23,7 @@ final class MySqlTest extends TestCase
         self::assertSame('cantera_torneo_test', $params['dbname'], 'Las pruebas solo pueden usar la base dedicada de pruebas.');
         $this->db = DriverManager::getConnection($params);
         self::assertStringNotContainsString('MariaDB', $this->db->fetchOne('SELECT VERSION()'));
-        $config = ORMSetup::createAttributeMetadataConfiguration([dirname(__DIR__, 2).'/src/Entity'], true);
+        $config = ORMSetup::createAttributeMetadataConfiguration([dirname(__DIR__, 2).'/backend/src/Entity'], true);
         // Usar la misma estrategia de nombres que config/packages/doctrine.yaml.
         $config->setNamingStrategy(new \Doctrine\ORM\Mapping\UnderscoreNamingStrategy(CASE_LOWER));
         $this->em = new EntityManager($this->db, $config);

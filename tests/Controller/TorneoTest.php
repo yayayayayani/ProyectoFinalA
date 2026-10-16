@@ -52,6 +52,55 @@ final class TorneoTest extends WebTestCase
         else $_SERVER['DATABASE_URL'] = $this->previous[1];
     }
 
+    public function testInvalidCalendarDatesCannotBeSavedInOtherModules(): void
+    {
+        foreach (['/jornada/new', '/jornada/'.$this->jornadaId.'/edit'] as $url) {
+            $page = $this->client->request('GET', $url);
+            $form = $page->selectButton('Guardar jornada')->form([
+                'jornada[nombre]' => 'Fecha inválida', 'jornada[fecha]' => '2026-02-30',
+            ]);
+            $this->client->submit($form);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSelectorTextContains('main form', 'fecha válida del calendario');
+            $this->em->clear();
+            self::assertSame(1, $this->em->getRepository(Jornada::class)->count([]));
+            self::assertSame('2026-10-17', $this->em->find(Jornada::class, $this->jornadaId)->getFecha()->format('Y-m-d'));
+        }
+        foreach (['fechaIncidencia', 'fechaSuspension'] as $field) {
+            $page = $this->client->request('GET', '/incidencia/new');
+            $values = ['incidencia[jugador]' => $this->jugadorId, 'incidencia[descripcion]' => 'Prueba',
+                'incidencia[tipoTarjeta]' => 'roja', 'incidencia[fechaIncidencia]' => '2026-02-01',
+                'incidencia[fechaSuspension]' => '2026-03-10'];
+            $values['incidencia['.$field.']'] = '2026-02-30';
+            $this->client->submit($page->selectButton('Guardar incidencia')->form($values));
+            self::assertResponseStatusCodeSame(422);
+            self::assertSame(0, $this->em->getRepository(Incidencia::class)->count([]));
+        }
+    }
+
+    public function testDeleteTokenCannotBeReusedForAnotherEntityType(): void
+    {
+        $page = $this->client->request('GET', '/equipo/'.$this->equipoId);
+        $token = $page->selectButton('Eliminar equipo')->form()->getPhpValues()['_token'];
+        $this->client->request('POST', '/jugador/'.$this->jugadorId, ['_token' => $token]);
+        self::assertResponseStatusCodeSame(403);
+        self::assertNotNull($this->em->find(Jugador::class, $this->jugadorId));
+    }
+
+    public function testStoredHtmlIsEscapedAndSearchIsParameterized(): void
+    {
+        $payload = '<script>alert(1)</script>';
+        $equipo = (new Equipo())->setNombre($payload);
+        $this->em->persist($equipo);
+        $this->em->flush();
+        $this->client->request('GET', '/equipo');
+        self::assertStringNotContainsString($payload, $this->client->getResponse()->getContent());
+        self::assertStringContainsString('&lt;script&gt;', $this->client->getResponse()->getContent());
+        $this->client->request('GET', '/jugador', ['q' => "' OR 1=1 --"]);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('tbody', 'María');
+    }
+
     public function testAllScreensRenderAndInvalidFiltersAreHandled(): void
     {
         foreach (['/', '/equipo', '/equipo/new', '/equipo/'.$this->equipoId, '/equipo/'.$this->equipoId.'/edit',
